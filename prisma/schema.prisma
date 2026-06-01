@@ -6,12 +6,109 @@ datasource db {
   provider = "postgresql"
 }
 
+model Church {
+  id        String   @id @default(uuid())
+  name      String
+  cnpj      String?  @unique
+  city      String?
+  state     String?
+  phone     String?
+  email     String?
+  createdAt DateTime @default(now())
+
+  users               User[]
+  categories          Category[]
+  transactions        Transaction[]
+  cultos              Culto[]
+  spiritualCategories SpiritualCategory[]
+
+  @@map("churches")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      UserRole @default(TREASURER)
+  churchId  String
+  church    Church   @relation(fields: [churchId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  TREASURER
+  PASTOR
+}
+
+model Culto {
+  id        String    @id @default(uuid())
+  date      DateTime
+  type      CultoType
+  preacher  String?
+  churchId  String
+  church    Church    @relation(fields: [churchId], references: [id])
+  createdAt DateTime  @default(now())
+
+  dizimistas       Dizimista[]
+  spiritualRecords SpiritualRecord[]
+  transactions     Transaction[]
+
+  @@map("cultos")
+}
+
+enum CultoType {
+  FRIDAY_NIGHT
+  SUNDAY_MORNING
+  SUNDAY_NIGHT
+}
+
+model Dizimista {
+  id               String  @id @default(uuid())
+  name             String
+  amount           Int
+  contributionType String?
+  cultoId          String
+  culto            Culto   @relation(fields: [cultoId], references: [id])
+
+  @@map("dizimistas")
+}
+
+model SpiritualCategory {
+  id       String @id @default(uuid())
+  title    String
+  churchId String
+  church   Church @relation(fields: [churchId], references: [id])
+
+  records SpiritualRecord[]
+
+  @@unique([title, churchId])
+  @@map("spiritual_categories")
+}
+
+model SpiritualRecord {
+  id         String            @id @default(uuid())
+  value      Int
+  cultoId    String
+  culto      Culto             @relation(fields: [cultoId], references: [id])
+  categoryId String
+  category   SpiritualCategory @relation(fields: [categoryId], references: [id])
+
+  @@map("spiritual_records")
+}
+
 model Category {
   id           String        @id @default(uuid())
-  title        String        @unique
+  title        String
   color        String
+  churchId     String
+  church       Church        @relation(fields: [churchId], references: [id])
   transactions Transaction[]
 
+  @@unique([title, churchId])
   @@map("categories")
 }
 
@@ -23,6 +120,10 @@ model Transaction {
   date       DateTime
   categoryId String
   category   Category        @relation(fields: [categoryId], references: [id])
+  churchId   String
+  church     Church          @relation(fields: [churchId], references: [id])
+  cultoId    String?
+  culto      Culto?          @relation(fields: [cultoId], references: [id])
 
   @@map("transactions")
 }
