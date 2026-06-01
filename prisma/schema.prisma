@@ -7,14 +7,18 @@ datasource db {
 }
 
 model Church {
-  id        String   @id @default(uuid())
-  name      String
-  cnpj      String?  @unique
-  city      String?
-  state     String?
-  phone     String?
-  email     String?
-  createdAt DateTime @default(now())
+  id              String   @id @default(uuid())
+  name            String
+  cnpj            String?  @unique
+  street          String?
+  neighborhood    String?
+  city            String?
+  state           String?
+  zipCode         String?
+  phone           String?
+  email           String?
+  responsibleName String?
+  createdAt       DateTime @default(now())
 
   users               User[]
   categories          Category[]
