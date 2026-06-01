@@ -1,20 +1,15 @@
-import { CategoriesRepository } from "../database/repositories/categories.repository";
-import { CategoryModel } from "../database/schemas/category.schema";
-import { CategoriesService } from "../services/categories.service";
+import { CategoriesRepository } from '../database/repositories/categories.repository';
+import { CategoriesService } from '../services/categories.service';
 
 export class CategoriesFactory {
-    private static categoriesService: CategoriesService
+  private static categoriesService: CategoriesService;
 
-    static getServiceInstance(): CategoriesService {
-        if (this.categoriesService) {
-            return this.categoriesService
-        }
+  static getServiceInstance(): CategoriesService {
+    if (this.categoriesService) return this.categoriesService;
 
-        const repository = new CategoriesRepository(CategoryModel)
-        const service = new CategoriesService(repository)
+    const repository = new CategoriesRepository();
+    this.categoriesService = new CategoriesService(repository);
 
-        this.categoriesService = service
-
-        return service
-    }
+    return this.categoriesService;
+  }
 }

@@ -1,11 +1,11 @@
 import 'dotenv/config';
 import express, { json } from 'express';
 import cors from 'cors';
-import { setupMongo } from './database';
+import { setupPostgres } from './database/postgres.connection';
 import { routes } from './routes';
-import { errorHandler } from './middleware/error-handler.middleware.ts';
+import { errorHandler } from './middleware/error-handler.middleware';
 
-setupMongo().then(() => {
+setupPostgres().then(() => {
   const app = express();
   app.use(cors({ origin: process.env.FRONT_URL }));
   app.use(json());

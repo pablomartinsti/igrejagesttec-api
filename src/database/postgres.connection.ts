@@ -1,14 +1,11 @@
-import mongoose from 'mongoose';
+import { prisma } from './prisma.client';
 
-export async function setupMongo(): Promise<void> {
+export async function setupPostgres(): Promise<void> {
   try {
-    if (mongoose.connection.readyState === 1) {
-      return;
-    }
-
     console.log('🎲 Connecting to DB...');
 
-    await mongoose.connect(process.env.MONGO_URL as string);
+    await prisma.$connect();
+
     console.log('✅ DB Connected!');
   } catch (error) {
     console.error('❌ DB not Connected. Error:', error);

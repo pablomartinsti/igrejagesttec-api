@@ -1,31 +1,34 @@
-import { Category } from "../../entities/category.entity";
-import { CategoryModel } from "../schemas/category.schema";
+import { Category } from '../../entities/category.entity';
+import { prisma } from '../prisma.client';
 
 export class CategoriesRepository {
-    constructor(private model: typeof CategoryModel) { }
+  async create({ title, color }: Category): Promise<Category> {
+    const created = await prisma.category.create({
+      data: { title, color },
+    });
+    return this.toEntity(created);
+  }
 
-    async create({ title, color }: Category): Promise<Category> {
-        const createdCategory = await this.model.create({ title, color })
+  async findByTitle(title: string): Promise<Category | undefined> {
+    const found = await prisma.category.findUnique({ where: { title } });
+    return found ? this.toEntity(found) : undefined;
+  }
 
-        return createdCategory.toObject<Category>()
-    }
-    async findByTitle(title: string): Promise<Category | undefined> {
-        const category = await this.model.findOne({ title })
+  async findById(id: string): Promise<Category | undefined> {
+    const found = await prisma.category.findUnique({ where: { id } });
+    return found ? this.toEntity(found) : undefined;
+  }
 
-        return category?.toObject<Category>()
-    }
-    async findById(id: string): Promise<Category | undefined> {
-        const category = await this.model.findById(id)
+  async index(): Promise<Category[]> {
+    const categories = await prisma.category.findMany();
+    return categories.map(this.toEntity);
+  }
 
-        return category?.toObject<Category>()
-    }
-
-    async index(): Promise<Category[]> {
-        const categories = await this.model.find()
-
-        const categoriesMap = categories.map((item) => item.toObject<Category>())
-
-        return categoriesMap
-
-    }
+  private toEntity(raw: {
+    id: string;
+    title: string;
+    color: string;
+  }): Category {
+    return new Category({ _id: raw.id, title: raw.title, color: raw.color });
+  }
 }

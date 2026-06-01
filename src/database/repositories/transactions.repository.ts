@@ -1,3 +1,5 @@
+import { Prisma } from '@prisma/client';
+import { prisma } from '../prisma.client';
 import {
   GetDashBoarDTO,
   GetFinancialEvolutionDTO,
@@ -8,12 +10,10 @@ import {
   Transaction,
   TransactionType,
 } from '../../entities/transactions.entity';
-import { TransactionModel } from '../schemas/transactions.schema';
 import { Expense } from '../../entities/expense.entity';
+import { Category } from '../../entities/category.entity';
 
 export class TransactionsRepository {
-  constructor(private model: typeof TransactionModel) {}
-
   async create({
     title,
     date,
@@ -21,15 +21,17 @@ export class TransactionsRepository {
     type,
     category,
   }: Transaction): Promise<Transaction> {
-    const createdTransaction = await this.model.create({
-      title,
-      date,
-      amount,
-      type,
-      category,
+    const created = await prisma.transaction.create({
+      data: {
+        title,
+        amount,
+        type: type as 'income' | 'expense',
+        date,
+        categoryId: category._id!,
+      },
+      include: { category: true },
     });
-
-    return createdTransaction.toObject<Transaction>();
+    return this.toEntity(created);
   }
 
   async index({
@@ -38,169 +40,135 @@ export class TransactionsRepository {
     beginDate,
     endDate,
   }: IndexTransactionsDTO): Promise<Transaction[]> {
-    const whereParams: Record<string, unknown> = {
-      ...(title && { title: { $regex: title, $options: 'i' } }),
-      ...(categoryId && { 'category._id': categoryId }),
+    const where: Prisma.TransactionWhereInput = {
+      ...(title && { title: { contains: title, mode: 'insensitive' } }),
+      ...(categoryId && { categoryId }),
+      ...((beginDate || endDate) && {
+        date: {
+          ...(beginDate && { gte: beginDate }),
+          ...(endDate && { lte: endDate }),
+        },
+      }),
     };
 
-    if (beginDate || endDate) {
-      whereParams.date = {
-        ...(beginDate && { $gte: beginDate }),
-        ...(endDate && { $lte: endDate }),
-      };
-    }
-
-    console.log(whereParams);
-
-    const transactions = await this.model.find(whereParams, undefined, {
-      sort: {
-        date: -1,
-      },
+    const transactions = await prisma.transaction.findMany({
+      where,
+      orderBy: { date: 'desc' },
+      include: { category: true },
     });
 
-    const transactionsMap = transactions.map((item) =>
-      item.toObject<Transaction>(),
-    );
-
-    return transactionsMap;
+    return transactions.map(this.toEntity);
   }
 
   async getBalance({ beginDate, endDate }: GetDashBoarDTO): Promise<Balance> {
-    const aggregate = this.model.aggregate<Balance>();
-    if (beginDate || endDate) {
-      aggregate.match({
-        date: {
-          ...(beginDate && { $gte: beginDate }),
-          ...(endDate && { $lte: endDate }),
-        },
-      });
-    }
-
-    const [result] = await aggregate
-      .project({
-        _id: 0,
-        income: {
-          $cond: [
-            {
-              $eq: ['$type', 'income'],
+    const where: Prisma.TransactionWhereInput =
+      beginDate || endDate
+        ? {
+            date: {
+              ...(beginDate && { gte: beginDate }),
+              ...(endDate && { lte: endDate }),
             },
-            '$amount',
-            0,
-          ],
-        },
-        expense: {
-          $cond: [
-            {
-              $eq: ['$type', 'expense'],
-            },
-            '$amount',
-            0,
-          ],
-        },
-      })
-      .group({
-        _id: null,
-        incomes: {
-          $sum: '$income',
-        },
-        expenses: {
-          $sum: '$expense',
-        },
-      })
-      .addFields({
-        balance: {
-          $subtract: ['$incomes', '$expenses'],
-        },
-      });
+          }
+        : {};
 
-    return result;
+    const result = await prisma.transaction.groupBy({
+      by: ['type'],
+      where,
+      _sum: { amount: true },
+    });
+
+    const incomes = result.find((r) => r.type === 'income')?._sum.amount ?? 0;
+    const expenses = result.find((r) => r.type === 'expense')?._sum.amount ?? 0;
+
+    return new Balance({
+      _id: null,
+      incomes,
+      expenses,
+      balance: incomes - expenses,
+    });
   }
 
   async getExpense({ beginDate, endDate }: GetDashBoarDTO): Promise<Expense[]> {
-    const aggregate = this.model.aggregate<Expense>();
-
-    const matchParams: Record<string, unknown> = {
-      type: TransactionType.EXPENSE,
+    const where: Prisma.TransactionWhereInput = {
+      type: 'expense',
+      ...((beginDate || endDate) && {
+        date: {
+          ...(beginDate && { gte: beginDate }),
+          ...(endDate && { lte: endDate }),
+        },
+      }),
     };
-    if (beginDate || endDate) {
-      matchParams.date = {
-        ...(beginDate && { $gte: beginDate }),
-        ...(endDate && { $lte: endDate }),
-      };
-    }
-    const result = await aggregate.match(matchParams).group({
-      _id: '$category._id',
-      title: {
-        $first: '$category.title',
-      },
-      color: {
-        $first: '$category.color',
-      },
-      amount: {
-        $sum: '$amount',
-      },
+
+    const grouped = await prisma.transaction.groupBy({
+      by: ['categoryId'],
+      where,
+      _sum: { amount: true },
     });
 
-    return result;
+    const categoryIds = grouped.map((r) => r.categoryId);
+    const categories = await prisma.category.findMany({
+      where: { id: { in: categoryIds } },
+    });
+
+    return grouped.map((r) => {
+      const cat = categories.find((c) => c.id === r.categoryId)!;
+      return new Expense({
+        _id: cat.id,
+        title: cat.title,
+        color: cat.color,
+        amount: r._sum.amount ?? 0,
+      });
+    });
   }
 
   async getFinancialEvolution({
     year,
   }: GetFinancialEvolutionDTO): Promise<Balance[]> {
-    const aggregate = this.model.aggregate<Balance>();
+    const rows = await prisma.$queryRaw<
+      { year: number; month: number; incomes: bigint; expenses: bigint }[]
+    >`
+      SELECT
+        EXTRACT(YEAR FROM date)::int  AS year,
+        EXTRACT(MONTH FROM date)::int AS month,
+        COALESCE(SUM(CASE WHEN type = 'income'  THEN amount ELSE 0 END), 0) AS incomes,
+        COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS expenses
+      FROM transactions
+      WHERE date >= ${new Date(`${year}-01-01`)}
+        AND date <= ${new Date(`${year}-12-31`)}
+      GROUP BY year, month
+      ORDER BY year, month
+    `;
 
-    const result = await aggregate
-      .match({
-        date: {
-          $gte: new Date(`${year}-01-01`),
-          $lte: new Date(`${year}-12-31`),
-        },
-      })
-      .project({
-        _id: 0,
-        income: {
-          $cond: [
-            {
-              $eq: ['$type', 'income'],
-            },
-            '$amount',
-            0,
-          ],
-        },
-        year: {
-          $year: '$date',
-        },
-        month: {
-          $month: '$date',
-        },
-        expense: {
-          $cond: [
-            {
-              $eq: ['$type', 'expense'],
-            },
-            '$amount',
-            0,
-          ],
-        },
-      })
-      .group({
-        _id: ['$year', '$month'],
-        incomes: {
-          $sum: '$income',
-        },
-        expenses: {
-          $sum: '$expense',
-        },
-      })
-      .addFields({
-        balance: {
-          $subtract: ['$incomes', '$expenses'],
-        },
-      })
-      .sort({
-        _id: 1,
-      });
+    return rows.map(
+      (r) =>
+        new Balance({
+          _id: [r.year, r.month],
+          incomes: Number(r.incomes),
+          expenses: Number(r.expenses),
+          balance: Number(r.incomes) - Number(r.expenses),
+        }),
+    );
+  }
 
-    return result;
+  private toEntity(raw: {
+    id: string;
+    title: string;
+    amount: number;
+    type: string;
+    date: Date;
+    category: { id: string; title: string; color: string };
+  }): Transaction {
+    return new Transaction({
+      _id: raw.id,
+      title: raw.title,
+      amount: raw.amount,
+      type: raw.type as TransactionType,
+      date: raw.date,
+      category: new Category({
+        _id: raw.category.id,
+        title: raw.category.title,
+        color: raw.category.color,
+      }),
+    });
   }
 }
