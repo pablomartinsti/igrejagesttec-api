@@ -4,6 +4,7 @@ import { categoriesRoutes } from './categories.route';
 import { transactionsRoutes } from './transactions.routes';
 import { authRoutes } from './auth.routes';
 import { usersRoutes } from './users.routes';
+import { cultosRoutes } from './cultos.routes';
 import { authMiddleware } from '../middleware/auth.middleware';
 
 export const routes = Router();
@@ -16,3 +17,4 @@ routes.use(authMiddleware);
 routes.use('/categories', categoriesRoutes);
 routes.use('/transactions', transactionsRoutes);
 routes.use('/users', usersRoutes);
+routes.use('/cultos', cultosRoutes);
