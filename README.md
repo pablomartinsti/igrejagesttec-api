@@ -26,7 +26,11 @@ Backend de um sistema de gestão financeira e espiritual para igrejas. Desenvolv
 - Registro de dados espirituais por culto (conversões, visitantes, etc.)
 - Culto retorna dados completos: dizimistas, registros espirituais e transações
 
-### 🔜 Fase 4 — Relatórios _(planejado)_
+### ✅ Fase 4 — Relatórios
+
+- Relatório completo por culto (financeiro + espiritual + dizimistas)
+- Relatório por período (semana, mês ou intervalo personalizado)
+- Relatório anual com consolidado mês a mês
 
 ---
 
@@ -282,6 +286,40 @@ GET /transactions/financial-evolution?year=2026
   "value": 3
 }
 ```
+
+---
+
+### Relatórios
+
+| Método | Rota                         | Descrição                      |
+| ------ | ---------------------------- | ------------------------------ |
+| GET    | `/relatorios/culto/:cultoId` | Relatório completo de um culto |
+| GET    | `/relatorios/periodo`        | Relatório por período          |
+| GET    | `/relatorios/anual`          | Relatório anual mês a mês      |
+
+**GET /relatorios/culto/:cultoId**
+
+```
+GET /relatorios/culto/uuid-do-culto
+```
+
+Retorna: dados do culto, financeiro (dízimos, entradas, saídas, saldo), dizimistas, registros espirituais e transações.
+
+**GET /relatorios/periodo**
+
+```
+GET /relatorios/periodo?beginDate=2026-06-01&endDate=2026-06-30
+```
+
+Retorna: financeiro consolidado, espiritual consolidado, lista de cultos do período e transações.
+
+**GET /relatorios/anual**
+
+```
+GET /relatorios/anual?year=2026
+```
+
+Retorna: resumo do ano (entradas, saídas, dízimos, saldo, total de cultos) e dados mês a mês.
 
 ---
 
