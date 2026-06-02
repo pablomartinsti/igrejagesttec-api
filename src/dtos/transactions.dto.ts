@@ -6,12 +6,24 @@ export const createTransactionSchema = {
   amount: z.number().int().positive(),
   type: z.nativeEnum(TransactionType),
   date: z.coerce.date(),
-  // UUID (PostgreSQL) — era z.string().length(24) para ObjectId do MongoDB
   categoryId: z.string().uuid(),
+  cultoId: z.string().uuid().optional(),
 };
 
 const createTransactionObject = z.object(createTransactionSchema);
 export type CreatetransactionDTO = z.infer<typeof createTransactionObject>;
+
+export const updateTransactionSchema = {
+  title: z.string().optional(),
+  amount: z.number().int().positive().optional(),
+  type: z.nativeEnum(TransactionType).optional(),
+  date: z.coerce.date().optional(),
+  categoryId: z.string().uuid().optional(),
+  cultoId: z.string().uuid().optional(),
+};
+
+const updateTransactionObject = z.object(updateTransactionSchema);
+export type UpdateTransactionDTO = z.infer<typeof updateTransactionObject>;
 
 export const indexTransactionsSchema = {
   title: z.string().optional(),

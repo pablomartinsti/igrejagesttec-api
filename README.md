@@ -20,17 +20,24 @@ Backend de um sistema de gestão financeira e espiritual para igrejas. Desenvolv
 
 ### ✅ Fase 3 — Cultos e espiritual
 
-- CRUD de cultos (sexta noite, domingo manhã, domingo noite)
-- Adição de dizimistas por culto (com ou sem identificação)
+- CRUD completo de cultos (sexta noite, domingo manhã, domingo noite)
+- Adição e remoção de dizimistas por culto (com ou sem identificação)
 - Categorias espirituais personalizadas por igreja
-- Registro de dados espirituais por culto (conversões, visitantes, etc.)
-- Culto retorna dados completos: dizimistas, registros espirituais e transações
+- Registro e remoção de dados espirituais por culto
+- Transações podem ser vinculadas a um culto (opcional)
+- Delete em cascata: ao deletar culto, remove dizimistas, registros espirituais e transações vinculadas
 
 ### ✅ Fase 4 — Relatórios
 
 - Relatório completo por culto (financeiro + espiritual + dizimistas)
 - Relatório por período (semana, mês ou intervalo personalizado)
 - Relatório anual com consolidado mês a mês
+
+### ✅ CRUD completo
+
+- Categorias financeiras: criar, listar, editar, deletar
+- Transações: criar, listar, editar, deletar
+- Cultos: criar, listar, buscar, editar, deletar (com cascata)
 
 ---
 
@@ -183,10 +190,12 @@ Body:
 
 ### Categories
 
-| Método | Rota          | Descrição                  |
-| ------ | ------------- | -------------------------- |
-| POST   | `/categories` | Cria categoria financeira  |
-| GET    | `/categories` | Lista categorias da igreja |
+| Método | Rota              | Descrição                  |
+| ------ | ----------------- | -------------------------- |
+| POST   | `/categories`     | Cria categoria financeira  |
+| GET    | `/categories`     | Lista categorias da igreja |
+| PUT    | `/categories/:id` | Atualiza categoria         |
+| DELETE | `/categories/:id` | Deleta categoria           |
 
 **POST /categories**
 
@@ -194,6 +203,15 @@ Body:
 {
   "title": "Dízimos",
   "color": "#4CAF50"
+}
+```
+
+**PUT /categories/:id**
+
+```json
+{
+  "title": "Dízimos Atualizado",
+  "color": "#FF5733"
 }
 ```
 
@@ -205,6 +223,8 @@ Body:
 | ------ | ----------------------------------- | ---------------------------- |
 | POST   | `/transactions`                     | Cria transação               |
 | GET    | `/transactions`                     | Lista transações com filtros |
+| PUT    | `/transactions/:id`                 | Atualiza transação           |
+| DELETE | `/transactions/:id`                 | Deleta transação             |
 | GET    | `/transactions/dashboard`           | Saldo, receitas e despesas   |
 | GET    | `/transactions/financial-evolution` | Evolução financeira por ano  |
 
@@ -216,11 +236,21 @@ Body:
   "amount": 50000,
   "type": "income",
   "date": "2026-06-01",
-  "categoryId": "uuid-da-categoria"
+  "categoryId": "uuid-da-categoria",
+  "cultoId": "uuid-do-culto"
 }
 ```
 
-> `amount` em centavos — R$ 500,00 = `50000`
+> `amount` em centavos — R$ 500,00 = `50000` > `cultoId` é opcional — omita para transações avulsas
+
+**PUT /transactions/:id**
+
+```json
+{
+  "title": "Título atualizado",
+  "amount": 60000
+}
+```
 
 **Filtros disponíveis:**
 
@@ -236,15 +266,19 @@ GET /transactions/financial-evolution?year=2026
 
 ### Cultos
 
-| Método | Rota                             | Descrição                             |
-| ------ | -------------------------------- | ------------------------------------- |
-| POST   | `/cultos/categorias-espirituais` | Cria categoria espiritual             |
-| GET    | `/cultos/categorias-espirituais` | Lista categorias espirituais          |
-| POST   | `/cultos`                        | Cria culto                            |
-| GET    | `/cultos`                        | Lista todos os cultos                 |
-| GET    | `/cultos/:id`                    | Busca culto por id                    |
-| POST   | `/cultos/:id/dizimistas`         | Adiciona dizimista ao culto           |
-| POST   | `/cultos/:id/espiritual`         | Adiciona registro espiritual ao culto |
+| Método | Rota                                  | Descrição                     |
+| ------ | ------------------------------------- | ----------------------------- |
+| POST   | `/cultos/categorias-espirituais`      | Cria categoria espiritual     |
+| GET    | `/cultos/categorias-espirituais`      | Lista categorias espirituais  |
+| POST   | `/cultos`                             | Cria culto                    |
+| GET    | `/cultos`                             | Lista todos os cultos         |
+| GET    | `/cultos/:id`                         | Busca culto por id            |
+| PUT    | `/cultos/:id`                         | Atualiza culto                |
+| DELETE | `/cultos/:id`                         | Deleta culto e tudo vinculado |
+| POST   | `/cultos/:id/dizimistas`              | Adiciona dizimista ao culto   |
+| DELETE | `/cultos/:id/dizimistas/:dizimistaId` | Remove dizimista              |
+| POST   | `/cultos/:id/espiritual`              | Adiciona registro espiritual  |
+| DELETE | `/cultos/:id/espiritual/:recordId`    | Remove registro espiritual    |
 
 **POST /cultos/categorias-espirituais**
 
@@ -266,6 +300,15 @@ GET /transactions/financial-evolution?year=2026
 
 > Tipos disponíveis: `FRIDAY_NIGHT`, `SUNDAY_MORNING`, `SUNDAY_NIGHT`
 
+**PUT /cultos/:id**
+
+```json
+{
+  "preacher": "Pr. Warley Atualizado",
+  "type": "SUNDAY_NIGHT"
+}
+```
+
 **POST /cultos/:id/dizimistas**
 
 ```json
@@ -286,6 +329,8 @@ GET /transactions/financial-evolution?year=2026
   "value": 3
 }
 ```
+
+> ⚠️ Ao deletar um culto, todos os dizimistas, registros espirituais e transações vinculadas são deletados automaticamente.
 
 ---
 

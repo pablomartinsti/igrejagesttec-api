@@ -6,6 +6,7 @@ import {
   CreateDizimistaDTO,
   CreateSpiritualCategoryDTO,
   CreateSpiritualRecordDTO,
+  UpdateCultoDTO,
 } from '../dtos/cultos.dto';
 
 export class CultosService {
@@ -14,6 +15,85 @@ export class CultosService {
       data: { date, type, preacher, churchId },
     });
     return culto;
+  }
+
+  async update(id: string, churchId: string, data: UpdateCultoDTO) {
+    const culto = await prisma.culto.findFirst({ where: { id, churchId } });
+
+    if (!culto) {
+      throw new ApppError('Culto não encontrado.', StatusCodes.NOT_FOUND);
+    }
+
+    const updated = await prisma.culto.update({
+      where: { id },
+      data,
+    });
+
+    return updated;
+  }
+
+  async delete(id: string, churchId: string) {
+    const culto = await prisma.culto.findFirst({ where: { id, churchId } });
+
+    if (!culto) {
+      throw new ApppError('Culto não encontrado.', StatusCodes.NOT_FOUND);
+    }
+
+    await prisma.dizimista.deleteMany({ where: { cultoId: id } });
+    await prisma.spiritualRecord.deleteMany({ where: { cultoId: id } });
+    await prisma.transaction.deleteMany({ where: { cultoId: id } }); // ← adicionar essa linha
+    await prisma.culto.delete({ where: { id } });
+  }
+
+  async removeDizimista(
+    cultoId: string,
+    churchId: string,
+    dizimistaId: string,
+  ) {
+    const culto = await prisma.culto.findFirst({
+      where: { id: cultoId, churchId },
+    });
+
+    if (!culto) {
+      throw new ApppError('Culto não encontrado.', StatusCodes.NOT_FOUND);
+    }
+
+    const dizimista = await prisma.dizimista.findFirst({
+      where: { id: dizimistaId, cultoId },
+    });
+
+    if (!dizimista) {
+      throw new ApppError('Dizimista não encontrado.', StatusCodes.NOT_FOUND);
+    }
+
+    await prisma.dizimista.delete({ where: { id: dizimistaId } });
+  }
+
+  async removeSpiritualRecord(
+    cultoId: string,
+    churchId: string,
+    recordId: string,
+  ) {
+    const culto = await prisma.culto.findFirst({
+      where: { id: cultoId, churchId },
+    });
+
+    if (!culto) {
+      throw new ApppError('Culto não encontrado.', StatusCodes.NOT_FOUND);
+    }
+
+    const record = await prisma.spiritualRecord.findFirst({
+      where: { id: recordId, cultoId },
+    });
+
+    if (!record) {
+      throw new ApppError(
+        'Registro espiritual não encontrado.',
+        StatusCodes.NOT_FOUND,
+      );
+    }
+
+    await prisma.spiritualRecord.delete({ where: { id: recordId } });
   }
 
   async index(churchId: string) {
@@ -59,11 +139,17 @@ export class CultosService {
       throw new ApppError('Culto não encontrado.', StatusCodes.NOT_FOUND);
     }
 
-    const dizimista = await prisma.dizimista.create({
-      data: { ...data, cultoId },
+    return prisma.dizimista.create({
+      // cast to any to satisfy prisma generated types when optional fields may be omitted
+      data: {
+        cultoId,
+        amount: data.amount,
+        ...(data.name ? { name: data.name } : {}),
+        ...(data.contributionType
+          ? { contributionType: data.contributionType }
+          : {}),
+      } as any,
     });
-
-    return dizimista;
   }
 
   async addSpiritualRecord(
@@ -90,12 +176,10 @@ export class CultosService {
       );
     }
 
-    const record = await prisma.spiritualRecord.create({
+    return prisma.spiritualRecord.create({
       data: { value: data.value, cultoId, categoryId: data.categoryId },
       include: { category: true },
     });
-
-    return record;
   }
 
   async createSpiritualCategory(
@@ -113,11 +197,9 @@ export class CultosService {
       );
     }
 
-    const category = await prisma.spiritualCategory.create({
+    return prisma.spiritualCategory.create({
       data: { title: data.title, churchId },
     });
-
-    return category;
   }
 
   async indexSpiritualCategories(churchId: string) {

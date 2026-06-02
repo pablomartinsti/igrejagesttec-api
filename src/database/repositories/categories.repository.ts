@@ -2,15 +2,38 @@ import { Category } from '../../entities/category.entity';
 import { prisma } from '../prisma.client';
 
 export class CategoriesRepository {
-  async create({ title, color }: Category): Promise<Category> {
+  async create(
+    { title, color }: Category,
+    churchId: string,
+  ): Promise<Category> {
     const created = await prisma.category.create({
-      data: { title, color },
+      data: { title, color, churchId },
     });
     return this.toEntity(created);
   }
 
-  async findByTitle(title: string): Promise<Category | undefined> {
-    const found = await prisma.category.findUnique({ where: { title } });
+  async update(
+    id: string,
+    data: Partial<{ title: string; color: string }>,
+  ): Promise<Category> {
+    const updated = await prisma.category.update({
+      where: { id },
+      data,
+    });
+    return this.toEntity(updated);
+  }
+
+  async delete(id: string): Promise<void> {
+    await prisma.category.delete({ where: { id } });
+  }
+
+  async findByTitle(
+    title: string,
+    churchId: string,
+  ): Promise<Category | undefined> {
+    const found = await prisma.category.findUnique({
+      where: { title_churchId: { title, churchId } },
+    });
     return found ? this.toEntity(found) : undefined;
   }
 
@@ -19,8 +42,8 @@ export class CategoriesRepository {
     return found ? this.toEntity(found) : undefined;
   }
 
-  async index(): Promise<Category[]> {
-    const categories = await prisma.category.findMany();
+  async index(churchId: string): Promise<Category[]> {
+    const categories = await prisma.category.findMany({ where: { churchId } });
     return categories.map(this.toEntity);
   }
 

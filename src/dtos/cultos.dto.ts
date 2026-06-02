@@ -9,6 +9,15 @@ export const createCultoSchema = {
 const createCultoObject = z.object(createCultoSchema);
 export type CreateCultoDTO = z.infer<typeof createCultoObject>;
 
+export const updateCultoSchema = {
+  date: z.coerce.date().optional(),
+  type: z.enum(['FRIDAY_NIGHT', 'SUNDAY_MORNING', 'SUNDAY_NIGHT']).optional(),
+  preacher: z.string().optional(),
+};
+
+const updateCultoObject = z.object(updateCultoSchema);
+export type UpdateCultoDTO = z.infer<typeof updateCultoObject>;
+
 export const createDizimistaSchema = {
   name: z.string().optional(),
   amount: z.number().int().positive(),

@@ -14,13 +14,11 @@ import { Expense } from '../../entities/expense.entity';
 import { Category } from '../../entities/category.entity';
 
 export class TransactionsRepository {
-  async create({
-    title,
-    date,
-    amount,
-    type,
-    category,
-  }: Transaction): Promise<Transaction> {
+  async create(
+    { title, date, amount, type, category }: Transaction,
+    churchId: string,
+    cultoId?: string,
+  ): Promise<Transaction> {
     const created = await prisma.transaction.create({
       data: {
         title,
@@ -28,10 +26,53 @@ export class TransactionsRepository {
         type: type as 'income' | 'expense',
         date,
         categoryId: category._id!,
+        churchId,
+        ...(cultoId && { cultoId }),
       },
       include: { category: true },
     });
     return this.toEntity(created);
+  }
+
+  async update(
+    id: string,
+    churchId: string,
+    data: Partial<{
+      title: string;
+      amount: number;
+      type: TransactionType;
+      date: Date;
+      categoryId: string;
+    }>,
+  ): Promise<Transaction> {
+    const { categoryId, ...rest } = data;
+
+    const updated = await prisma.transaction.update({
+      where: { id },
+      data: {
+        ...rest,
+        ...(categoryId && {
+          category: { connect: { id: categoryId } },
+        }),
+      },
+      include: { category: true },
+    });
+    return this.toEntity(updated);
+  }
+
+  async delete(id: string): Promise<void> {
+    await prisma.transaction.delete({ where: { id } });
+  }
+
+  async findById(
+    id: string,
+    churchId: string,
+  ): Promise<Transaction | undefined> {
+    const found = await prisma.transaction.findFirst({
+      where: { id, churchId },
+      include: { category: true },
+    });
+    return found ? this.toEntity(found) : undefined;
   }
 
   async index({
@@ -39,8 +80,10 @@ export class TransactionsRepository {
     categoryId,
     beginDate,
     endDate,
-  }: IndexTransactionsDTO): Promise<Transaction[]> {
+    churchId,
+  }: IndexTransactionsDTO & { churchId: string }): Promise<Transaction[]> {
     const where: Prisma.TransactionWhereInput = {
+      churchId,
       ...(title && { title: { contains: title, mode: 'insensitive' } }),
       ...(categoryId && { categoryId }),
       ...((beginDate || endDate) && {
@@ -60,16 +103,22 @@ export class TransactionsRepository {
     return transactions.map(this.toEntity);
   }
 
-  async getBalance({ beginDate, endDate }: GetDashBoarDTO): Promise<Balance> {
-    const where: Prisma.TransactionWhereInput =
-      beginDate || endDate
+  async getBalance({
+    beginDate,
+    endDate,
+    churchId,
+  }: GetDashBoarDTO & { churchId: string }): Promise<Balance> {
+    const where: Prisma.TransactionWhereInput = {
+      churchId,
+      ...(beginDate || endDate
         ? {
             date: {
               ...(beginDate && { gte: beginDate }),
               ...(endDate && { lte: endDate }),
             },
           }
-        : {};
+        : {}),
+    };
 
     const result = await prisma.transaction.groupBy({
       by: ['type'],
@@ -88,8 +137,13 @@ export class TransactionsRepository {
     });
   }
 
-  async getExpense({ beginDate, endDate }: GetDashBoarDTO): Promise<Expense[]> {
+  async getExpense({
+    beginDate,
+    endDate,
+    churchId,
+  }: GetDashBoarDTO & { churchId: string }): Promise<Expense[]> {
     const where: Prisma.TransactionWhereInput = {
+      churchId,
       type: 'expense',
       ...((beginDate || endDate) && {
         date: {
@@ -123,21 +177,28 @@ export class TransactionsRepository {
 
   async getFinancialEvolution({
     year,
-  }: GetFinancialEvolutionDTO): Promise<Balance[]> {
-    const rows = await prisma.$queryRaw<
-      { year: number; month: number; incomes: bigint; expenses: bigint }[]
-    >`
-      SELECT
-        EXTRACT(YEAR FROM date)::int  AS year,
-        EXTRACT(MONTH FROM date)::int AS month,
-        COALESCE(SUM(CASE WHEN type = 'income'  THEN amount ELSE 0 END), 0) AS incomes,
-        COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS expenses
-      FROM transactions
-      WHERE date >= ${new Date(`${year}-01-01`)}
-        AND date <= ${new Date(`${year}-12-31`)}
-      GROUP BY year, month
-      ORDER BY year, month
-    `;
+    churchId,
+  }: GetFinancialEvolutionDTO & { churchId: string }): Promise<Balance[]> {
+    type Row = {
+      year: number;
+      month: number;
+      incomes: bigint;
+      expenses: bigint;
+    };
+
+    const rows = await prisma.$queryRaw<Row[]>`
+    SELECT
+      EXTRACT(YEAR FROM date)::int  AS year,
+      EXTRACT(MONTH FROM date)::int AS month,
+      COALESCE(SUM(CASE WHEN type = 'income'  THEN amount ELSE 0 END), 0) AS incomes,
+      COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS expenses
+    FROM transactions
+    WHERE "churchId" = ${churchId}
+      AND date >= ${new Date(`${year}-01-01`)}
+      AND date <= ${new Date(`${year}-12-31`)}
+    GROUP BY year, month
+    ORDER BY year, month
+  `;
 
     return rows.map(
       (r) =>
