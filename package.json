@@ -6,6 +6,9 @@
   "scripts": {
     "lint": "eslint ./ --fix",
     "dev": "tsx watch ./src/server.ts",
+    "seed:defaults": "tsx scripts/seed-default-categories.ts",
+    "seed:demo": "tsx scripts/seed-demo-data.ts",
+    "seed:demo-months": "tsx scripts/seed-demo-months.ts",
     "build": "tsc",
     "start": "node ./build/src/server.js"
   },

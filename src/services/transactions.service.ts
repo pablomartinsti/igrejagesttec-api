@@ -87,9 +87,10 @@ export class TransactionsService {
   async getDashbord(
     { beginDate, endDate }: GetDashBoarDTO,
     churchId: string,
-  ): Promise<{ balance: Balance; expenses: Expense[] }> {
-    let [balance, expenses] = await Promise.all([
+  ): Promise<{ balance: Balance; cashBalance: Balance; expenses: Expense[] }> {
+    let [balance, cashBalance, expenses] = await Promise.all([
       this.transactionsRepository.getBalance({ beginDate, endDate, churchId }),
+      this.transactionsRepository.getBalance({ endDate, churchId }),
       this.transactionsRepository.getExpense({ beginDate, endDate, churchId }),
     ]);
 
@@ -97,7 +98,16 @@ export class TransactionsService {
       balance = new Balance({ _id: null, incomes: 0, expenses: 0, balance: 0 });
     }
 
-    return { balance, expenses };
+    if (!cashBalance) {
+      cashBalance = new Balance({
+        _id: null,
+        incomes: 0,
+        expenses: 0,
+        balance: 0,
+      });
+    }
+
+    return { balance, cashBalance, expenses };
   }
 
   async getFinancialEvolution(
