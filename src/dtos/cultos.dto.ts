@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const createCultoSchema = {
   date: z.coerce.date(),
-  type: z.enum(['FRIDAY_NIGHT', 'SUNDAY_MORNING', 'SUNDAY_NIGHT']),
+  categoryId: z.string().uuid(),
   preacher: z.string().optional(),
 };
 
@@ -11,7 +11,7 @@ export type CreateCultoDTO = z.infer<typeof createCultoObject>;
 
 export const updateCultoSchema = {
   date: z.coerce.date().optional(),
-  type: z.enum(['FRIDAY_NIGHT', 'SUNDAY_MORNING', 'SUNDAY_NIGHT']).optional(),
+  categoryId: z.string().uuid().optional(),
   preacher: z.string().optional(),
 };
 
@@ -45,3 +45,10 @@ const createSpiritualCategoryObject = z.object(createSpiritualCategorySchema);
 export type CreateSpiritualCategoryDTO = z.infer<
   typeof createSpiritualCategoryObject
 >;
+
+export const createCultoCategorySchema = {
+  title: z.string().min(1),
+};
+
+const createCultoCategoryObject = z.object(createCultoCategorySchema);
+export type CreateCultoCategoryDTO = z.infer<typeof createCultoCategoryObject>;

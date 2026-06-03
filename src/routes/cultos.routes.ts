@@ -3,6 +3,7 @@ import { CultosFactory } from '../factories/cultos.factory';
 import { ParamsType, validator } from '../middleware/validator.middleware';
 import {
   createCultoSchema,
+  createCultoCategorySchema,
   createDizimistaSchema,
   createSpiritualCategorySchema,
   createSpiritualRecordSchema,
@@ -14,6 +15,21 @@ export const cultosRoutes = Router();
 
 const controller = CultosFactory.getControllerInstance();
 
+// categorias de culto — fixas primeiro
+cultosRoutes.post(
+  '/categorias',
+  roleMiddleware('ADMIN'),
+  validator({ schema: createCultoCategorySchema, type: ParamsType.BODY }),
+  controller.createCultoCategory,
+);
+cultosRoutes.get('/categorias', controller.indexCultoCategories);
+cultosRoutes.delete(
+  '/categorias/:id',
+  roleMiddleware('ADMIN'),
+  controller.deleteCultoCategory,
+);
+
+// categorias espirituais
 cultosRoutes.post(
   '/categorias-espirituais',
   roleMiddleware('ADMIN'),
@@ -25,6 +41,7 @@ cultosRoutes.get(
   controller.indexSpiritualCategories,
 );
 
+// cultos
 cultosRoutes.post(
   '/',
   roleMiddleware('ADMIN'),
@@ -41,6 +58,7 @@ cultosRoutes.put(
 );
 cultosRoutes.delete('/:id', roleMiddleware('ADMIN'), controller.delete);
 
+// dizimistas
 cultosRoutes.post(
   '/:id/dizimistas',
   roleMiddleware('ADMIN'),
@@ -53,6 +71,7 @@ cultosRoutes.delete(
   controller.removeDizimista,
 );
 
+// espiritual
 cultosRoutes.post(
   '/:id/espiritual',
   roleMiddleware('ADMIN'),

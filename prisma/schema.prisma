@@ -25,6 +25,7 @@ model Church {
   transactions        Transaction[]
   cultos              Culto[]
   spiritualCategories SpiritualCategory[]
+  cultoCategories     CultoCategory[]
 
   @@map("churches")
 }
@@ -48,14 +49,26 @@ enum UserRole {
   PASTOR
 }
 
+model CultoCategory {
+  id       String  @id @default(uuid())
+  title    String
+  churchId String
+  church   Church  @relation(fields: [churchId], references: [id])
+  cultos   Culto[]
+
+  @@unique([title, churchId])
+  @@map("culto_categories")
+}
+
 model Culto {
-  id        String    @id @default(uuid())
-  date      DateTime
-  type      CultoType
-  preacher  String?
-  churchId  String
-  church    Church    @relation(fields: [churchId], references: [id])
-  createdAt DateTime  @default(now())
+  id         String        @id @default(uuid())
+  date       DateTime
+  categoryId String
+  category   CultoCategory @relation(fields: [categoryId], references: [id])
+  preacher   String?
+  churchId   String
+  church     Church        @relation(fields: [churchId], references: [id])
+  createdAt  DateTime      @default(now())
 
   dizimistas       Dizimista[]
   spiritualRecords SpiritualRecord[]
@@ -64,15 +77,9 @@ model Culto {
   @@map("cultos")
 }
 
-enum CultoType {
-  FRIDAY_NIGHT
-  SUNDAY_MORNING
-  SUNDAY_NIGHT
-}
-
 model Dizimista {
   id               String  @id @default(uuid())
-  name             String
+  name             String?
   amount           Int
   contributionType String?
   cultoId          String
