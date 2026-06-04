@@ -6,8 +6,8 @@ services:
     restart: always
     image: postgres:16
     environment:
-      POSTGRES_USER: devbills
-      POSTGRES_PASSWORD: pass123
+      POSTGRES_USER: igrejaGestTec
+      POSTGRES_PASSWORD: pa26ka29
       POSTGRES_DB: finance_db
     ports:
       - '5432:5432'
