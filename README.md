@@ -1,413 +1,446 @@
-# IgrejaGestTec — Backend
+# IgrejaGestTec API
 
-Backend de um sistema de gestão financeira e espiritual para igrejas. Desenvolvido com **Node.js**, **Express**, **TypeScript** e **PostgreSQL** com **Prisma ORM**.
+Backend do IgrejaGestTec, um sistema de gestao financeira e espiritual para igrejas.
 
----
+A API foi criada com Node.js, Express, TypeScript, PostgreSQL e Prisma. O sistema trabalha por igreja, mantendo os dados isolados por `churchId` e controlando acesso por perfil de usuario.
 
-## 🚀 Funcionalidades implementadas
+## Estado Atual
 
-### ✅ Fase 1 — Banco de dados
+O backend ja possui:
 
-- Modelagem completa para sistema multi-tenant
-- Tabelas: `Church`, `User`, `Culto`, `Dizimista`, `SpiritualCategory`, `SpiritualRecord`, `Category`, `Transaction`
+- Registro de igreja com usuario administrador.
+- Login com JWT.
+- Usuarios por igreja com perfis `ADMIN`, `TREASURER` e `PASTOR`.
+- Configuracao dos dados da igreja.
+- Categorias financeiras.
+- Categorias de culto.
+- Cultos com data, categoria e pregador.
+- Dizimos/ofertas vinculados ao culto.
+- Categorias e registros espirituais.
+- Transacoes avulsas e transacoes vinculadas ao culto.
+- Painel financeiro com saldo do periodo, saldo em caixa e gastos por categoria.
+- Evolucao financeira anual.
+- Relatorios por culto, periodo e ano.
+- Script automatico para testar as rotas principais.
 
-### ✅ Fase 2 — Autenticação e usuários
+## Tecnologias
 
-- Registro de igrejas protegido por chave de admin
-- Login com JWT
-- Controle de acesso por perfil (`ADMIN`, `PASTOR`)
-- Isolamento de dados por igreja
+- Node.js
+- TypeScript
+- Express
+- PostgreSQL
+- Prisma ORM
+- Zod
+- JWT
+- bcryptjs
+- Docker Compose
 
-### ✅ Fase 3 — Cultos e espiritual
-
-- CRUD completo de cultos (sexta noite, domingo manhã, domingo noite)
-- Adição e remoção de dizimistas por culto (com ou sem identificação)
-- Categorias espirituais personalizadas por igreja
-- Registro e remoção de dados espirituais por culto
-- Transações podem ser vinculadas a um culto (opcional)
-- Delete em cascata: ao deletar culto, remove dizimistas, registros espirituais e transações vinculadas
-
-### ✅ Fase 4 — Relatórios
-
-- Relatório completo por culto (financeiro + espiritual + dizimistas)
-- Relatório por período (semana, mês ou intervalo personalizado)
-- Relatório anual com consolidado mês a mês
-
-### ✅ CRUD completo
-
-- Categorias financeiras: criar, listar, editar, deletar
-- Transações: criar, listar, editar, deletar
-- Cultos: criar, listar, buscar, editar, deletar (com cascata)
-
----
-
-## 🛠️ Tecnologias
-
-- **Node.js** + **TypeScript**
-- **Express** — framework HTTP
-- **PostgreSQL** — banco de dados relacional
-- **Prisma ORM v7** — acesso ao banco com tipagem
-- **Zod** — validação de dados
-- **JWT** — autenticação
-- **bcryptjs** — hash de senhas
-- **Docker** — banco de dados em container
-
----
-
-## ⚙️ Pré-requisitos
+## Requisitos
 
 - Node.js 18+
 - npm
-- Docker Desktop
+- Docker Desktop ou PostgreSQL local
 
----
+## Configuracao Local
 
-## 🚀 Rodando localmente
-
-**1. Clone o repositório**
-
-```bash
-git clone https://github.com/pablomartinsti/igrejagesttec-api.git
-cd igrejagesttec-api
-```
-
-**2. Instale as dependências**
+Instale as dependencias:
 
 ```bash
 npm install
 ```
 
-**3. Configure o ambiente**
-
-Crie um arquivo `.env` na raiz:
+Crie o arquivo `.env` na raiz da API:
 
 ```env
-DATABASE_URL="postgresql://devbills:pass123@localhost:5432/finance_db"
-JWT_SECRET="sua_chave_jwt_secreta"
-ADMIN_KEY="sua_chave_admin_secreta"
+DATABASE_URL="postgresql://usuario:senha@localhost:5432/igrejagesttec"
+JWT_SECRET="sua_chave_jwt"
+ADMIN_KEY="sua_chave_para_registro_inicial"
 FRONT_URL="http://localhost:5173"
+PORT=3333
 ```
 
-**4. Suba o banco de dados**
+Suba o banco, se estiver usando Docker:
 
 ```bash
-docker-compose up -d postgres
+docker-compose up -d
 ```
 
-**5. Rode as migrations**
+Rode as migrations e gere o Prisma Client:
 
 ```bash
 npx prisma migrate dev
 npx prisma generate
 ```
 
-**6. Inicie o servidor**
+Inicie a API:
 
 ```bash
 npm run dev
 ```
 
-Servidor rodando em: `http://localhost:3333`
+URL padrao:
 
----
+```txt
+http://localhost:3333
+```
 
-## 🌐 Endpoints
+## Scripts
 
-> Todas as rotas exceto `/auth/register` e `/auth/login` requerem o header:
-> `Authorization: Bearer seu_token`
+```bash
+npm run dev              # inicia a API em modo desenvolvimento
+npm run build            # compila TypeScript
+npm start                # inicia a API compilada
+npm run seed:defaults    # cria categorias padrao
+npm run seed:demo        # cria dados demonstrativos basicos
+npm run seed:demo-months # cria dados de demonstracao por meses
+npm run seed:demo-outside # cria despesas avulsas fora dos cultos
+npm run test:routes      # testa rotas principais da API
+```
 
----
+## Teste Automatico de Rotas
+
+O script `test:routes` faz um teste rapido das rotas principais. Por padrao ele apenas consulta dados, sem criar, editar ou excluir registros.
+
+No PowerShell:
+
+```powershell
+$env:SMOKE_EMAIL="email-do-admin"
+$env:SMOKE_PASSWORD="senha-do-admin"
+npm run test:routes
+```
+
+Para testar tambem criacao, edicao e limpeza de dados temporarios, use um usuario `ADMIN`:
+
+```powershell
+$env:SMOKE_EMAIL="email-do-admin"
+$env:SMOKE_PASSWORD="senha-do-admin"
+$env:SMOKE_MUTATE="true"
+npm run test:routes
+```
+
+Se a API estiver em outra URL:
+
+```powershell
+$env:SMOKE_API_URL="http://localhost:3334"
+npm run test:routes
+```
+
+## Autenticacao
+
+Todas as rotas protegidas usam JWT no header:
+
+```txt
+Authorization: Bearer seu_token
+```
+
+Rotas publicas:
+
+- `GET /`
+- `POST /auth/login`
+- `POST /auth/register`, usando `X-Admin-Key`
+
+## Perfis e Permissoes
+
+| Perfil | Uso no sistema | Permissoes principais |
+| --- | --- | --- |
+| `ADMIN` | Administrador da igreja | Configura igreja, cria usuarios, cria/edita/lanca e exclui dados |
+| `TREASURER` | Tesoureiro | Cria e edita cultos, categorias e lancamentos; nao exclui dados |
+| `PASTOR` | Pastor/lider | Visualiza painel, cultos, transacoes e relatorios |
+
+Regra de negocio atual: exclusao de dados fica restrita ao `ADMIN`.
+
+## Padroes Importantes
+
+- Valores financeiros sao enviados em centavos. Exemplo: R$ 200,00 = `20000`.
+- Datas podem ser enviadas como `YYYY-MM-DD` ou ISO date.
+- Transacoes podem ser avulsas ou vinculadas a um culto com `cultoId`.
+- Culto nao usa mais campo `type`; ele usa `categoryId`, ligado a uma categoria de culto.
+- O nome do dizimista/ofertante pode ser omitido quando a igreja nao souber identificar o contribuinte.
+
+## Mapa de Rotas
+
+### Base
+
+| Metodo | Rota | Permissao | Descricao |
+| --- | --- | --- | --- |
+| GET | `/` | Publica | Dados basicos da API |
 
 ### Auth
 
-| Método | Rota             | Descrição                    | Autenticação            |
-| ------ | ---------------- | ---------------------------- | ----------------------- |
-| POST   | `/auth/register` | Registra nova igreja + admin | `X-Admin-Key` no header |
-| POST   | `/auth/login`    | Login de usuário             | Pública                 |
+| Metodo | Rota | Permissao | Descricao |
+| --- | --- | --- | --- |
+| POST | `/auth/register` | `X-Admin-Key` | Cria igreja e primeiro usuario `ADMIN` |
+| POST | `/auth/login` | Publica | Autentica usuario e retorna token |
 
-**POST /auth/register**
-
-Header:
-
-```
-X-Admin-Key: sua_chave_admin_secreta
-```
-
-Body:
-
-```json
-{
-  "church": {
-    "name": "IEQ Uberlândia Planalto",
-    "cnpj": "62.955.505/3998-25",
-    "city": "Uberlândia",
-    "state": "MG",
-    "phone": "34999999999",
-    "email": "ieq.planalto@email.com"
-  },
-  "user": {
-    "name": "Nome do Admin",
-    "email": "admin@igreja.com",
-    "password": "senha123"
-  }
-}
-```
-
-**POST /auth/login**
+Exemplo de login:
 
 ```json
 {
   "email": "admin@igreja.com",
-  "password": "senha123"
+  "password": "123456"
 }
 ```
 
----
+### Igreja
 
-### Users
+| Metodo | Rota | Permissao | Descricao |
+| --- | --- | --- | --- |
+| GET | `/church` | Autenticado | Retorna dados da igreja do usuario logado |
+| PUT | `/church` | `ADMIN` | Atualiza dados da igreja |
 
-> Apenas perfil `ADMIN`
-
-| Método | Rota     | Descrição                |
-| ------ | -------- | ------------------------ |
-| POST   | `/users` | Cria usuário na igreja   |
-| GET    | `/users` | Lista usuários da igreja |
-
-**POST /users**
+Exemplo de atualizacao:
 
 ```json
 {
-  "name": "Nome do Usuário",
+  "name": "IEQ Uberlandia Planalto",
+  "cnpj": "00.000.000/0000-00",
+  "city": "Uberlandia",
+  "state": "MG",
+  "phone": "(34) 99999-9999",
+  "email": "contato@igreja.com"
+}
+```
+
+### Usuarios
+
+| Metodo | Rota | Permissao | Descricao |
+| --- | --- | --- | --- |
+| GET | `/users` | `ADMIN` | Lista usuarios da igreja |
+| POST | `/users` | `ADMIN` | Cria usuario na igreja |
+
+Exemplo:
+
+```json
+{
+  "name": "Nome do Usuario",
   "email": "usuario@igreja.com",
-  "password": "senha123",
-  "role": "PASTOR"
+  "password": "123456",
+  "role": "TREASURER"
 }
 ```
 
-> Perfis disponíveis: `ADMIN`, `PASTOR`
+Roles validas:
 
----
+- `ADMIN`
+- `TREASURER`
+- `PASTOR`
 
-### Categories
+### Categorias Financeiras
 
-| Método | Rota              | Descrição                  |
-| ------ | ----------------- | -------------------------- |
-| POST   | `/categories`     | Cria categoria financeira  |
-| GET    | `/categories`     | Lista categorias da igreja |
-| PUT    | `/categories/:id` | Atualiza categoria         |
-| DELETE | `/categories/:id` | Deleta categoria           |
+| Metodo | Rota | Permissao | Descricao |
+| --- | --- | --- | --- |
+| GET | `/categories` | Autenticado | Lista categorias financeiras |
+| POST | `/categories` | `ADMIN`, `TREASURER` | Cria categoria financeira |
+| PUT | `/categories/:id` | `ADMIN`, `TREASURER` | Atualiza categoria financeira |
+| DELETE | `/categories/:id` | `ADMIN` | Exclui categoria financeira |
 
-**POST /categories**
+Exemplo:
 
 ```json
 {
-  "title": "Dízimos",
-  "color": "#4CAF50"
+  "title": "Oferta",
+  "color": "#16A34A"
 }
 ```
 
-**PUT /categories/:id**
+### Transacoes
+
+| Metodo | Rota | Permissao | Descricao |
+| --- | --- | --- | --- |
+| GET | `/transactions` | Autenticado | Lista transacoes com filtros |
+| POST | `/transactions` | `ADMIN`, `TREASURER` | Cria transacao |
+| PUT | `/transactions/:id` | `ADMIN`, `TREASURER` | Atualiza transacao |
+| DELETE | `/transactions/:id` | `ADMIN` | Exclui transacao |
+| GET | `/transactions/dashboard` | Autenticado | Retorna saldo, saldo em caixa e gastos por categoria |
+| GET | `/transactions/financial-evolution` | Autenticado | Retorna evolucao financeira por ano |
+
+Exemplo de transacao avulsa:
 
 ```json
 {
-  "title": "Dízimos Atualizado",
-  "color": "#FF5733"
+  "title": "Conta de luz",
+  "amount": 32000,
+  "type": "expense",
+  "date": "2026-06-03",
+  "categoryId": "uuid-da-categoria"
 }
 ```
 
----
-
-### Transactions
-
-| Método | Rota                                | Descrição                    |
-| ------ | ----------------------------------- | ---------------------------- |
-| POST   | `/transactions`                     | Cria transação               |
-| GET    | `/transactions`                     | Lista transações com filtros |
-| PUT    | `/transactions/:id`                 | Atualiza transação           |
-| DELETE | `/transactions/:id`                 | Deleta transação             |
-| GET    | `/transactions/dashboard`           | Saldo, receitas e despesas   |
-| GET    | `/transactions/financial-evolution` | Evolução financeira por ano  |
-
-**POST /transactions**
+Exemplo de transacao vinculada ao culto:
 
 ```json
 {
-  "title": "Dízimo João Silva",
+  "title": "Oferta missionaria",
   "amount": 50000,
   "type": "income",
-  "date": "2026-06-01",
+  "date": "2026-06-03",
   "categoryId": "uuid-da-categoria",
   "cultoId": "uuid-do-culto"
 }
 ```
 
-> `amount` em centavos — R$ 500,00 = `50000` > `cultoId` é opcional — omita para transações avulsas
+Filtros:
 
-**PUT /transactions/:id**
-
-```json
-{
-  "title": "Título atualizado",
-  "amount": 60000
-}
-```
-
-**Filtros disponíveis:**
-
-```
-GET /transactions?title=João
-GET /transactions?categoryId=uuid
-GET /transactions?beginDate=2026-01-01&endDate=2026-12-31
-GET /transactions/dashboard?beginDate=2026-01-01&endDate=2026-12-31
+```txt
+GET /transactions?beginDate=2026-06-01&endDate=2026-06-30
+GET /transactions?categoryId=uuid-da-categoria
+GET /transactions?title=luz
+GET /transactions/dashboard?beginDate=2026-06-01&endDate=2026-06-30
 GET /transactions/financial-evolution?year=2026
 ```
 
----
+Tipos de transacao:
+
+- `income`
+- `expense`
 
 ### Cultos
 
-| Método | Rota                                  | Descrição                     |
-| ------ | ------------------------------------- | ----------------------------- |
-| POST   | `/cultos/categorias-espirituais`      | Cria categoria espiritual     |
-| GET    | `/cultos/categorias-espirituais`      | Lista categorias espirituais  |
-| POST   | `/cultos`                             | Cria culto                    |
-| GET    | `/cultos`                             | Lista todos os cultos         |
-| GET    | `/cultos/:id`                         | Busca culto por id            |
-| PUT    | `/cultos/:id`                         | Atualiza culto                |
-| DELETE | `/cultos/:id`                         | Deleta culto e tudo vinculado |
-| POST   | `/cultos/:id/dizimistas`              | Adiciona dizimista ao culto   |
-| DELETE | `/cultos/:id/dizimistas/:dizimistaId` | Remove dizimista              |
-| POST   | `/cultos/:id/espiritual`              | Adiciona registro espiritual  |
-| DELETE | `/cultos/:id/espiritual/:recordId`    | Remove registro espiritual    |
+#### Categorias de Culto
 
-**POST /cultos/categorias-espirituais**
+| Metodo | Rota | Permissao | Descricao |
+| --- | --- | --- | --- |
+| GET | `/cultos/categorias` | Autenticado | Lista categorias de culto |
+| POST | `/cultos/categorias` | `ADMIN`, `TREASURER` | Cria categoria de culto |
+| DELETE | `/cultos/categorias/:id` | `ADMIN` | Exclui categoria de culto |
+
+Exemplo:
 
 ```json
 {
-  "title": "Conversões"
+  "title": "Culto de Domingo"
 }
 ```
 
-**POST /cultos**
+#### Cultos
+
+| Metodo | Rota | Permissao | Descricao |
+| --- | --- | --- | --- |
+| GET | `/cultos` | Autenticado | Lista cultos |
+| GET | `/cultos/:id` | Autenticado | Retorna detalhes do culto |
+| POST | `/cultos` | `ADMIN`, `TREASURER` | Cria culto |
+| PUT | `/cultos/:id` | `ADMIN`, `TREASURER` | Atualiza culto |
+| DELETE | `/cultos/:id` | `ADMIN` | Exclui culto e dados vinculados |
+
+Exemplo:
 
 ```json
 {
-  "date": "2026-06-01",
-  "type": "SUNDAY_MORNING",
+  "date": "2026-06-03",
+  "categoryId": "uuid-da-categoria-de-culto",
   "preacher": "Pr. Warley de Jesus da Silva"
 }
 ```
 
-> Tipos disponíveis: `FRIDAY_NIGHT`, `SUNDAY_MORNING`, `SUNDAY_NIGHT`
+#### Dizimos e Ofertas no Culto
 
-**PUT /cultos/:id**
+| Metodo | Rota | Permissao | Descricao |
+| --- | --- | --- | --- |
+| POST | `/cultos/:id/dizimistas` | `ADMIN`, `TREASURER` | Adiciona dizimo/oferta ao culto |
+| DELETE | `/cultos/:id/dizimistas/:dizimistaId` | `ADMIN` | Remove dizimo/oferta do culto |
 
-```json
-{
-  "preacher": "Pr. Warley Atualizado",
-  "type": "SUNDAY_NIGHT"
-}
-```
-
-**POST /cultos/:id/dizimistas**
+Exemplo:
 
 ```json
 {
-  "name": "Juliana Santos de Melo",
-  "amount": 22600,
-  "contributionType": "Dinheiro"
+  "name": "Maria Silva",
+  "amount": 20000,
+  "contributionType": "Dizimo"
 }
 ```
 
-> `name` é opcional — omita quando não souber o nome do doador
+`name` e `contributionType` sao opcionais.
 
-**POST /cultos/:id/espiritual**
+#### Categorias e Registros Espirituais
+
+| Metodo | Rota | Permissao | Descricao |
+| --- | --- | --- | --- |
+| GET | `/cultos/categorias-espirituais` | Autenticado | Lista categorias espirituais |
+| POST | `/cultos/categorias-espirituais` | `ADMIN`, `TREASURER` | Cria categoria espiritual |
+| POST | `/cultos/:id/espiritual` | `ADMIN`, `TREASURER` | Adiciona registro espiritual ao culto |
+| DELETE | `/cultos/:id/espiritual/:recordId` | `ADMIN` | Remove registro espiritual |
+
+Exemplo de categoria:
+
+```json
+{
+  "title": "Visitantes"
+}
+```
+
+Exemplo de registro:
 
 ```json
 {
   "categoryId": "uuid-da-categoria-espiritual",
-  "value": 3
+  "value": 4
 }
 ```
 
-> ⚠️ Ao deletar um culto, todos os dizimistas, registros espirituais e transações vinculadas são deletados automaticamente.
+### Relatorios
 
----
+| Metodo | Rota | Permissao | Descricao |
+| --- | --- | --- | --- |
+| GET | `/relatorios/culto/:cultoId` | Autenticado | Relatorio completo de um culto |
+| GET | `/relatorios/periodo` | Autenticado | Relatorio financeiro e espiritual por periodo |
+| GET | `/relatorios/anual` | Autenticado | Resumo anual mes a mes |
 
-### Relatórios
+Exemplos:
 
-| Método | Rota                         | Descrição                      |
-| ------ | ---------------------------- | ------------------------------ |
-| GET    | `/relatorios/culto/:cultoId` | Relatório completo de um culto |
-| GET    | `/relatorios/periodo`        | Relatório por período          |
-| GET    | `/relatorios/anual`          | Relatório anual mês a mês      |
-
-**GET /relatorios/culto/:cultoId**
-
-```
+```txt
 GET /relatorios/culto/uuid-do-culto
-```
-
-Retorna: dados do culto, financeiro (dízimos, entradas, saídas, saldo), dizimistas, registros espirituais e transações.
-
-**GET /relatorios/periodo**
-
-```
 GET /relatorios/periodo?beginDate=2026-06-01&endDate=2026-06-30
-```
-
-Retorna: financeiro consolidado, espiritual consolidado, lista de cultos do período e transações.
-
-**GET /relatorios/anual**
-
-```
 GET /relatorios/anual?year=2026
 ```
 
-Retorna: resumo do ano (entradas, saídas, dízimos, saldo, total de cultos) e dados mês a mês.
+## Estrutura de Pastas
 
----
-
-## 👥 Perfis de acesso
-
-| Perfil   | Quem é                 | Permissões                             |
-| -------- | ---------------------- | -------------------------------------- |
-| `ADMIN`  | Tesoureiro responsável | Tudo — lança, visualiza, cria usuários |
-| `PASTOR` | Pastor/Líder           | Só visualiza relatórios e dashboard    |
-
----
-
-## 🗄️ Estrutura do projeto
-
-```
+```txt
 src/
-  controllers/    — recebe requisições HTTP
-  services/       — regras de negócio
-  database/
-    repositories/ — acesso ao banco via Prisma
-    prisma.client.ts
-  dtos/           — validação com Zod
-  entities/       — classes de domínio
-  errors/         — erros personalizados
-  factories/      — instâncias singleton
-  middleware/     — auth, validação, roles
-  routes/         — definição das rotas
-prisma/
-  schema.prisma   — modelo do banco de dados
+  controllers/    # entrada HTTP, req/res/next
+  services/       # regras de negocio
+  database/       # Prisma client e repositories
+  dtos/           # validacoes Zod e tipos derivados
+  entities/       # entidades de dominio
+  errors/         # erros personalizados
+  factories/      # instancia os controllers/services
+  middleware/     # auth, role, validator e error handler
+  routes/         # definicao das rotas
+scripts/          # seeds e testes manuais/automaticos
+prisma/           # schema e migrations
 ```
 
----
+## Guia de Manutencao
 
-## 📦 Scripts
+Ao criar uma nova funcionalidade na API:
+
+1. Defina/ajuste o modelo no `prisma/schema.prisma`, se precisar.
+2. Rode migration com `npx prisma migrate dev`.
+3. Crie o DTO em `src/dtos`.
+4. Implemente regra de negocio em `src/services`.
+5. Crie controller em `src/controllers`.
+6. Crie factory em `src/factories`.
+7. Registre a rota em `src/routes`.
+8. Proteja a rota com `authMiddleware` e `roleMiddleware` conforme a permissao.
+9. Rode `npm run build`.
+10. Rode `npm run test:routes` para validar o fluxo principal.
+
+## Checklist Antes de Apresentar
 
 ```bash
-npm run dev      # Desenvolvimento
-npm run build    # Compilar para produção
-npm start        # Produção
+npm run build
 ```
 
----
+Depois, com a API rodando:
 
-## 📄 Licença
+```powershell
+$env:SMOKE_EMAIL="email-do-admin"
+$env:SMOKE_PASSWORD="senha"
+npm run test:routes
+```
 
-MIT — consulte o arquivo [LICENSE](LICENSE) para detalhes.
+Resultado esperado:
+
+```txt
+Tudo certo. Checks aprovados: 16
+```

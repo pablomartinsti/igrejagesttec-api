@@ -18,7 +18,7 @@ const controller = CultosFactory.getControllerInstance();
 // categorias de culto — fixas primeiro
 cultosRoutes.post(
   '/categorias',
-  roleMiddleware('ADMIN'),
+  roleMiddleware('ADMIN', 'TREASURER'),
   validator({ schema: createCultoCategorySchema, type: ParamsType.BODY }),
   controller.createCultoCategory,
 );
@@ -32,7 +32,7 @@ cultosRoutes.delete(
 // categorias espirituais
 cultosRoutes.post(
   '/categorias-espirituais',
-  roleMiddleware('ADMIN'),
+  roleMiddleware('ADMIN', 'TREASURER'),
   validator({ schema: createSpiritualCategorySchema, type: ParamsType.BODY }),
   controller.createSpiritualCategory,
 );
@@ -44,7 +44,7 @@ cultosRoutes.get(
 // cultos
 cultosRoutes.post(
   '/',
-  roleMiddleware('ADMIN'),
+  roleMiddleware('ADMIN', 'TREASURER'),
   validator({ schema: createCultoSchema, type: ParamsType.BODY }),
   controller.create,
 );
@@ -52,7 +52,7 @@ cultosRoutes.get('/', controller.index);
 cultosRoutes.get('/:id', controller.findById);
 cultosRoutes.put(
   '/:id',
-  roleMiddleware('ADMIN'),
+  roleMiddleware('ADMIN', 'TREASURER'),
   validator({ schema: updateCultoSchema, type: ParamsType.BODY }),
   controller.update,
 );
@@ -61,7 +61,7 @@ cultosRoutes.delete('/:id', roleMiddleware('ADMIN'), controller.delete);
 // dizimistas
 cultosRoutes.post(
   '/:id/dizimistas',
-  roleMiddleware('ADMIN'),
+  roleMiddleware('ADMIN', 'TREASURER'),
   validator({ schema: createDizimistaSchema, type: ParamsType.BODY }),
   controller.addDizimista,
 );
@@ -74,7 +74,7 @@ cultosRoutes.delete(
 // espiritual
 cultosRoutes.post(
   '/:id/espiritual',
-  roleMiddleware('ADMIN'),
+  roleMiddleware('ADMIN', 'TREASURER'),
   validator({ schema: createSpiritualRecordSchema, type: ParamsType.BODY }),
   controller.addSpiritualRecord,
 );

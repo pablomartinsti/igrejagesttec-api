@@ -1,7 +1,7 @@
 {
-  "name": "devbills-api",
+  "name": "igrejagesttec-api",
   "version": "1.0.0",
-  "description": "Devbills Api Controle sua vida financeira pessoal de forma rápida e fácil",
+  "description": "API do sistema IgrejaGestTec para gestao financeira e espiritual de igrejas",
   "main": "index.js",
   "scripts": {
     "lint": "eslint ./ --fix",
@@ -9,6 +9,8 @@
     "seed:defaults": "tsx scripts/seed-default-categories.ts",
     "seed:demo": "tsx scripts/seed-demo-data.ts",
     "seed:demo-months": "tsx scripts/seed-demo-months.ts",
+    "seed:demo-outside": "tsx scripts/seed-demo-outside-cultos.ts",
+    "test:routes": "tsx scripts/test-routes.ts",
     "build": "tsc",
     "start": "node ./build/src/server.js"
   },

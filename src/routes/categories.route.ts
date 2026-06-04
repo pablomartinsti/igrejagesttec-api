@@ -17,13 +17,13 @@ const controller = new CategoriesController(
 categoriesRoutes.get('/', controller.index);
 categoriesRoutes.post(
   '/',
-  roleMiddleware('ADMIN'),
+  roleMiddleware('ADMIN', 'TREASURER'),
   validator({ schema: createCategorySchema, type: ParamsType.BODY }),
   controller.create,
 );
 categoriesRoutes.put(
   '/:id',
-  roleMiddleware('ADMIN'),
+  roleMiddleware('ADMIN', 'TREASURER'),
   validator({ schema: updateCategorySchema, type: ParamsType.BODY }),
   controller.update,
 );

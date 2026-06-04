@@ -34,13 +34,13 @@ transactionsRoutes.get(
 );
 transactionsRoutes.post(
   '/',
-  roleMiddleware('ADMIN'),
+  roleMiddleware('ADMIN', 'TREASURER'),
   validator({ schema: createTransactionSchema, type: ParamsType.BODY }),
   controller.create,
 );
 transactionsRoutes.put(
   '/:id',
-  roleMiddleware('ADMIN'),
+  roleMiddleware('ADMIN', 'TREASURER'),
   validator({ schema: updateTransactionSchema, type: ParamsType.BODY }),
   controller.update,
 );

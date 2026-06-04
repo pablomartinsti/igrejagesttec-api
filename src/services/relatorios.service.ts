@@ -12,6 +12,7 @@ export class RelatoriosService {
     const culto = await prisma.culto.findFirst({
       where: { id: cultoId, churchId },
       include: {
+        category: true,
         dizimistas: true,
         spiritualRecords: { include: { category: true } },
         transactions: { include: { category: true } },
@@ -34,7 +35,8 @@ export class RelatoriosService {
       culto: {
         id: culto.id,
         date: culto.date,
-        type: culto.type,
+        type: culto.category.title,
+        category: culto.category,
         preacher: culto.preacher,
       },
       financeiro: {
@@ -59,6 +61,7 @@ export class RelatoriosService {
         date: { gte: beginDate, lte: endDate },
       },
       include: {
+        category: true,
         dizimistas: true,
         spiritualRecords: { include: { category: true } },
         transactions: { include: { category: true } },
@@ -104,7 +107,8 @@ export class RelatoriosService {
       cultos: cultos.map((c) => ({
         id: c.id,
         date: c.date,
-        type: c.type,
+        type: c.category.title,
+        category: c.category,
         preacher: c.preacher,
         dizimistas: c.dizimistas.length,
         transacoes: c.transactions.length,
