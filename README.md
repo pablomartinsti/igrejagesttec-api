@@ -54,6 +54,7 @@ Crie o arquivo `.env` na raiz da API:
 
 ```env
 DATABASE_URL="postgresql://usuario:senha@localhost:5432/igrejagesttec"
+DIRECT_URL="postgresql://usuario:senha@localhost:5432/igrejagesttec"
 JWT_SECRET="sua_chave_jwt"
 ADMIN_KEY="sua_chave_para_registro_inicial"
 FRONT_URL="http://localhost:5173"
@@ -156,7 +157,8 @@ Configure um Web Service para a API e um PostgreSQL no Render.
 Variaveis de ambiente obrigatorias:
 
 ```env
-DATABASE_URL="url-do-postgres-render"
+DATABASE_URL="url-pooled-do-neon"
+DIRECT_URL="url-direct-do-neon"
 JWT_SECRET="uma-chave-segura"
 ADMIN_KEY="uma-chave-secreta-para-criar-a-primeira-igreja"
 FRONT_URL="http://localhost:5173,https://url-do-front"
@@ -178,6 +180,12 @@ prisma generate
 prisma migrate deploy
 npm run build
 ```
+
+Usando Neon:
+
+- `DATABASE_URL`: use a URL pooled do Neon, normalmente com `-pooler` no host.
+- `DIRECT_URL`: use a URL direct do Neon, sem `-pooler`, para migrations.
+- As duas URLs devem usar SSL, normalmente com `?sslmode=require`.
 
 Depois que a API estiver online, crie a primeira igreja/admin pela rota
 `POST /auth/register`. As categorias padrao dessa igreja serao criadas
