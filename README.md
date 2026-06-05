@@ -14,6 +14,7 @@ O backend ja possui:
 - Configuracao dos dados da igreja.
 - Categorias financeiras.
 - Categorias de culto.
+- Categorias padrao criadas automaticamente ao registrar uma igreja.
 - Cultos com data, categoria e pregador.
 - Dizimos/ofertas vinculados ao culto.
 - Categorias e registros espirituais.
@@ -37,7 +38,7 @@ O backend ja possui:
 
 ## Requisitos
 
-- Node.js 18+
+- Node.js 22+
 - npm
 - Docker Desktop ou PostgreSQL local
 
@@ -57,6 +58,12 @@ JWT_SECRET="sua_chave_jwt"
 ADMIN_KEY="sua_chave_para_registro_inicial"
 FRONT_URL="http://localhost:5173"
 PORT=3333
+```
+
+Se precisar liberar mais de uma origem no CORS, separe por virgula:
+
+```env
+FRONT_URL="http://localhost:5173,https://seu-front.onrender.com"
 ```
 
 Suba o banco, se estiver usando Docker:
@@ -90,11 +97,28 @@ http://localhost:3333
 npm run dev              # inicia a API em modo desenvolvimento
 npm run build            # compila TypeScript
 npm start                # inicia a API compilada
-npm run seed:defaults    # cria categorias padrao
-npm run seed:demo        # cria dados demonstrativos basicos
-npm run seed:demo-months # cria dados de demonstracao por meses
-npm run seed:demo-outside # cria despesas avulsas fora dos cultos
+npm run db:deploy        # aplica migrations em producao
+npm run render:build     # build recomendado para Render
+npm run render:start     # start recomendado para Render
+npm run seed:defaults    # cria categorias padrao nas igrejas existentes
 npm run test:routes      # testa rotas principais da API
+```
+
+O seed oficial do projeto e `seed:defaults`. Ele cria categorias financeiras,
+categorias de culto e categorias espirituais. Se a categoria ja existir, ela e
+ignorada para evitar duplicidade.
+
+Para rodar em todas as igrejas existentes:
+
+```bash
+npm run seed:defaults
+```
+
+Para rodar em apenas uma igreja:
+
+```powershell
+$env:CHURCH_ID="uuid-da-igreja"
+npm run seed:defaults
 ```
 
 ## Teste Automatico de Rotas
@@ -124,6 +148,40 @@ Se a API estiver em outra URL:
 $env:SMOKE_API_URL="http://localhost:3334"
 npm run test:routes
 ```
+
+## Deploy no Render
+
+Configure um Web Service para a API e um PostgreSQL no Render.
+
+Variaveis de ambiente obrigatorias:
+
+```env
+DATABASE_URL="url-do-postgres-render"
+JWT_SECRET="uma-chave-segura"
+ADMIN_KEY="uma-chave-secreta-para-criar-a-primeira-igreja"
+FRONT_URL="http://localhost:5173,https://url-do-front"
+PORT=3333
+NODE_VERSION=22
+```
+
+Comandos recomendados no Render:
+
+```txt
+Build Command: npm run render:build
+Start Command: npm run render:start
+```
+
+O `render:build` executa:
+
+```txt
+prisma generate
+prisma migrate deploy
+npm run build
+```
+
+Depois que a API estiver online, crie a primeira igreja/admin pela rota
+`POST /auth/register`. As categorias padrao dessa igreja serao criadas
+automaticamente nesse cadastro.
 
 ## Autenticacao
 
@@ -171,6 +229,9 @@ Regra de negocio atual: exclusao de dados fica restrita ao `ADMIN`.
 | --- | --- | --- | --- |
 | POST | `/auth/register` | `X-Admin-Key` | Cria igreja e primeiro usuario `ADMIN` |
 | POST | `/auth/login` | Publica | Autentica usuario e retorna token |
+
+Ao criar uma igreja pelo `/auth/register`, a API tambem cria automaticamente
+as categorias padrao dessa igreja.
 
 Exemplo de login:
 

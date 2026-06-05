@@ -7,7 +7,16 @@ import { errorHandler } from './middleware/error-handler.middleware';
 
 setupPostgres().then(() => {
   const app = express();
-  app.use(cors({ origin: process.env.FRONT_URL }));
+  const allowedOrigins = (process.env.FRONT_URL || '')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean);
+
+  app.use(
+    cors({
+      origin: allowedOrigins.length > 0 ? allowedOrigins : undefined,
+    }),
+  );
   app.use(json());
   app.use(routes);
   app.use(errorHandler);

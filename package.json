@@ -3,13 +3,16 @@
   "version": "1.0.0",
   "description": "API do sistema IgrejaGestTec para gestao financeira e espiritual de igrejas",
   "main": "index.js",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "lint": "eslint ./ --fix",
     "dev": "tsx watch ./src/server.ts",
+    "db:deploy": "prisma migrate deploy",
+    "render:build": "prisma generate && prisma migrate deploy && npm run build",
+    "render:start": "npm start",
     "seed:defaults": "tsx scripts/seed-default-categories.ts",
-    "seed:demo": "tsx scripts/seed-demo-data.ts",
-    "seed:demo-months": "tsx scripts/seed-demo-months.ts",
-    "seed:demo-outside": "tsx scripts/seed-demo-outside-cultos.ts",
     "test:routes": "tsx scripts/test-routes.ts",
     "build": "tsc",
     "start": "node ./build/src/server.js"

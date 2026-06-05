@@ -4,6 +4,7 @@ import { StatusCodes } from 'http-status-codes';
 import { prisma } from '../database/prisma.client';
 import { ApppError } from '../errors/app.error';
 import { LoginDTO, RegisterDTO } from '../dtos/auth.dto';
+import { createDefaultCategoriesForChurch } from './default-categories.service';
 
 export class AuthService {
   async register({ church, user }: RegisterDTO) {
@@ -36,6 +37,12 @@ export class AuthService {
       },
       include: { users: true },
     });
+
+    try {
+      await createDefaultCategoriesForChurch(createdChurch.id);
+    } catch (error) {
+      console.error('Nao foi possivel criar categorias padrao.', error);
+    }
 
     const createdUser = createdChurch.users[0];
 
