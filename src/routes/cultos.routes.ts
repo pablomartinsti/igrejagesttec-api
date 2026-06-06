@@ -23,6 +23,12 @@ cultosRoutes.post(
   controller.createCultoCategory,
 );
 cultosRoutes.get('/categorias', controller.indexCultoCategories);
+cultosRoutes.put(
+  '/categorias/:id',
+  roleMiddleware('ADMIN', 'TREASURER'),
+  validator({ schema: createCultoCategorySchema, type: ParamsType.BODY }),
+  controller.updateCultoCategory,
+);
 cultosRoutes.delete(
   '/categorias/:id',
   roleMiddleware('ADMIN'),
@@ -39,6 +45,17 @@ cultosRoutes.post(
 cultosRoutes.get(
   '/categorias-espirituais',
   controller.indexSpiritualCategories,
+);
+cultosRoutes.put(
+  '/categorias-espirituais/:id',
+  roleMiddleware('ADMIN', 'TREASURER'),
+  validator({ schema: createSpiritualCategorySchema, type: ParamsType.BODY }),
+  controller.updateSpiritualCategory,
+);
+cultosRoutes.delete(
+  '/categorias-espirituais/:id',
+  roleMiddleware('ADMIN'),
+  controller.deleteSpiritualCategory,
 );
 
 // cultos

@@ -188,6 +188,54 @@ export class CultosService {
     return prisma.spiritualCategory.findMany({ where: { churchId } });
   }
 
+  async updateSpiritualCategory(
+    id: string,
+    data: CreateSpiritualCategoryDTO,
+    churchId: string,
+  ) {
+    const category = await prisma.spiritualCategory.findFirst({
+      where: { id, churchId },
+    });
+    if (!category)
+      throw new ApppError(
+        'Categoria espiritual nao encontrada.',
+        StatusCodes.NOT_FOUND,
+      );
+
+    const duplicate = await prisma.spiritualCategory.findFirst({
+      where: { title: data.title, churchId, NOT: { id } },
+    });
+    if (duplicate)
+      throw new ApppError(
+        'Categoria espiritual ja existe.',
+        StatusCodes.BAD_REQUEST,
+      );
+
+    return prisma.spiritualCategory.update({
+      where: { id },
+      data: { title: data.title },
+    });
+  }
+
+  async deleteSpiritualCategory(id: string, churchId: string) {
+    const category = await prisma.spiritualCategory.findFirst({
+      where: { id, churchId },
+      include: { records: { select: { id: true }, take: 1 } },
+    });
+    if (!category)
+      throw new ApppError(
+        'Categoria espiritual nao encontrada.',
+        StatusCodes.NOT_FOUND,
+      );
+    if (category.records.length > 0)
+      throw new ApppError(
+        'Categoria espiritual possui registros vinculados.',
+        StatusCodes.BAD_REQUEST,
+      );
+
+    await prisma.spiritualCategory.delete({ where: { id } });
+  }
+
   async createCultoCategory(data: CreateCultoCategoryDTO, churchId: string) {
     const existing = await prisma.cultoCategory.findFirst({
       where: { title: data.title, churchId },
@@ -204,6 +252,35 @@ export class CultosService {
 
   async indexCultoCategories(churchId: string) {
     return prisma.cultoCategory.findMany({ where: { churchId } });
+  }
+
+  async updateCultoCategory(
+    id: string,
+    data: CreateCultoCategoryDTO,
+    churchId: string,
+  ) {
+    const category = await prisma.cultoCategory.findFirst({
+      where: { id, churchId },
+    });
+    if (!category)
+      throw new ApppError(
+        'Categoria de culto nao encontrada.',
+        StatusCodes.NOT_FOUND,
+      );
+
+    const duplicate = await prisma.cultoCategory.findFirst({
+      where: { title: data.title, churchId, NOT: { id } },
+    });
+    if (duplicate)
+      throw new ApppError(
+        'Categoria de culto ja existe.',
+        StatusCodes.BAD_REQUEST,
+      );
+
+    return prisma.cultoCategory.update({
+      where: { id },
+      data: { title: data.title },
+    });
   }
 
   async deleteCultoCategory(id: string, churchId: string) {

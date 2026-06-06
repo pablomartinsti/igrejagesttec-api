@@ -183,6 +183,38 @@ export class CultosController {
     }
   };
 
+  updateSpiritualCategory = async (
+    req: Request<{ id: string }, unknown, CreateSpiritualCategoryDTO>,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    try {
+      const churchId = req.auth!.churchId;
+      const result = await this.cultosService.updateSpiritualCategory(
+        req.params.id,
+        req.body,
+        churchId,
+      );
+      res.status(StatusCodes.OK).json(result);
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  deleteSpiritualCategory = async (
+    req: Request<{ id: string }>,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    try {
+      const churchId = req.auth!.churchId;
+      await this.cultosService.deleteSpiritualCategory(req.params.id, churchId);
+      res.status(StatusCodes.NO_CONTENT).send();
+    } catch (err) {
+      next(err);
+    }
+  };
+
   createCultoCategory = async (
     req: BodyRequest<CreateCultoCategoryDTO>,
     res: Response,
@@ -208,6 +240,24 @@ export class CultosController {
     try {
       const churchId = req.auth!.churchId;
       const result = await this.cultosService.indexCultoCategories(churchId);
+      res.status(StatusCodes.OK).json(result);
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  updateCultoCategory = async (
+    req: Request<{ id: string }, unknown, CreateCultoCategoryDTO>,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    try {
+      const churchId = req.auth!.churchId;
+      const result = await this.cultosService.updateCultoCategory(
+        req.params.id,
+        req.body,
+        churchId,
+      );
       res.status(StatusCodes.OK).json(result);
     } catch (err) {
       next(err);

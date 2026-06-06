@@ -371,6 +371,7 @@ Tipos de transacao:
 | --- | --- | --- | --- |
 | GET | `/cultos/categorias` | Autenticado | Lista categorias de culto |
 | POST | `/cultos/categorias` | `ADMIN`, `TREASURER` | Cria categoria de culto |
+| PUT | `/cultos/categorias/:id` | `ADMIN`, `TREASURER` | Edita categoria de culto |
 | DELETE | `/cultos/categorias/:id` | `ADMIN` | Exclui categoria de culto |
 
 Exemplo:
@@ -426,6 +427,8 @@ Exemplo:
 | --- | --- | --- | --- |
 | GET | `/cultos/categorias-espirituais` | Autenticado | Lista categorias espirituais |
 | POST | `/cultos/categorias-espirituais` | `ADMIN`, `TREASURER` | Cria categoria espiritual |
+| PUT | `/cultos/categorias-espirituais/:id` | `ADMIN`, `TREASURER` | Edita categoria espiritual |
+| DELETE | `/cultos/categorias-espirituais/:id` | `ADMIN` | Exclui categoria espiritual sem registros vinculados |
 | POST | `/cultos/:id/espiritual` | `ADMIN`, `TREASURER` | Adiciona registro espiritual ao culto |
 | DELETE | `/cultos/:id/espiritual/:recordId` | `ADMIN` | Remove registro espiritual |
 
