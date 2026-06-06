@@ -5,7 +5,7 @@ export const createTransactionSchema = {
   title: z.string(),
   amount: z.number().int().positive(),
   type: z.nativeEnum(TransactionType),
-  date: z.coerce.date(),
+  date: z.coerce.date().optional(),
   categoryId: z.string().uuid(),
   cultoId: z.string().uuid().optional(),
 };

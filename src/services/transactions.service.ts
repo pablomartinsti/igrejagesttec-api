@@ -11,6 +11,7 @@ import { Transaction } from '../entities/transactions.entity';
 import { ApppError } from '../errors/app.error';
 import { Balance } from '../entities/balance.entity';
 import { Expense } from '../entities/expense.entity';
+import { prisma } from '../database/prisma.client';
 
 export class TransactionsService {
   constructor(
@@ -28,10 +29,29 @@ export class TransactionsService {
       throw new ApppError('Categoria não encontrada.', StatusCodes.NOT_FOUND);
     }
 
+    let transactionDate = date;
+
+    if (cultoId) {
+      const culto = await prisma.culto.findFirst({
+        where: { id: cultoId, churchId },
+        select: { date: true },
+      });
+
+      if (!culto) {
+        throw new ApppError('Culto nao encontrado.', StatusCodes.NOT_FOUND);
+      }
+
+      transactionDate = culto.date;
+    }
+
+    if (!transactionDate) {
+      throw new ApppError('Data obrigatoria.', StatusCodes.BAD_REQUEST);
+    }
+
     const transaction = new Transaction({
       title,
       type,
-      date,
+      date: transactionDate,
       category,
       amount,
     });
